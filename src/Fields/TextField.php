@@ -13,12 +13,7 @@ class TextField extends BaseField
 {
 
     protected bool $isEmail = false;
-
-    public function email(): self
-    {
-        $this->isEmail = true;
-        return $this;
-    }
+    protected bool $isPassword = false;
 
     public function handle(mixed $data, ?ComponentContract $parent = null): mixed
     {
@@ -33,8 +28,21 @@ class TextField extends BaseField
     public function getViewOptions(): array
     {
         return [
-            'is_email' => $this->isEmail
+            'is_email' => $this->isEmail,
+            'is_password' => $this->isPassword
         ];
+    }
+
+    public function email(): self
+    {
+        $this->isEmail = true;
+        return $this;
+    }
+
+    public function password(): self
+    {
+        $this->isPassword = true;
+        return $this;
     }
 
 }
