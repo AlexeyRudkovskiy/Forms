@@ -53,7 +53,7 @@ class JsonRenderer implements Renderer
 
     protected function mapForm(BaseForm $form): array
     {
-        $fields = $form->getFields();
+        $fields = $form->getCreatedFields();
         $layout = $form->getLayout();
         $fields = collect($fields);
         $fields = $fields

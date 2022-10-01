@@ -5,12 +5,16 @@ namespace YProjects\Forms\Fields;
 use Illuminate\Support\Collection;
 use YProjects\Forms\Components\BaseField;
 use YProjects\Forms\Contracts\ComponentContract;
+use YProjects\Forms\Contracts\WithDataSetContract;
+use YProjects\Forms\Traits\WithAjaxDataProvider;
 
 /**
  * @method static CheckboxGroup make(string $name)
  */
-class CheckboxGroup extends BaseField
+class CheckboxGroup extends BaseField implements WithDataSetContract
 {
+
+    use WithAjaxDataProvider;
 
     protected array $options = [];
 
@@ -35,9 +39,30 @@ class CheckboxGroup extends BaseField
     public function getViewOptions(): array
     {
         $baseOptions = parent::getViewOptions();
-        $options = [
-            'items' => $this->getAvailableData()
-        ];
+        $options = [];
+        $options['is_ajax'] = $this->isAjax;
+
+        if ($this->isAjax) {
+            $ajaxRoute = config('forms.ajax_route_name', null);
+            if ($ajaxRoute === null) {
+                throw new \Exception("Please specify route name before using Ajax data providers!");
+            }
+            $options['items'] = [];
+            $formClass = get_class($this->getParentForm());
+            $mapping = config('forms.ajax', []);
+            if (!array_key_exists($formClass, $mapping)) {
+                throw new \Exception("Please create mapping before using Ajax data providers!");
+            }
+
+            $formMapping = $mapping[$formClass];
+
+            $options['url'] = route($ajaxRoute, [
+                'form' => $formMapping['name'],
+                'field' => $this->getName()
+            ]);
+        } else {
+            $options['items'] = $this->getAvailableData();
+        }
 
         $options = array_merge_recursive($options, $baseOptions);
         return $options;
@@ -115,12 +140,10 @@ class CheckboxGroup extends BaseField
         return $this;
     }
 
-    protected function getAvailableData(): Collection
+    public function getAvailableData(array $filters = []): Collection
     {
-        $options = [];
-
         if ($this->optionsResolver !== null) {
-            $options = call_user_func($this->optionsResolver, $this);
+            $options = call_user_func($this->optionsResolver, $this, $filters);
             if (! $options instanceof Collection) {
                 $options = collect($options);
             }
@@ -133,6 +156,16 @@ class CheckboxGroup extends BaseField
 
         return $options
             ->map(fn (mixed $item) => [ 'value' => $item[$value], 'label' => $item[$label] ]);
+    }
+
+    public function getDataValueKey(): string
+    {
+        return 'value';
+    }
+
+    public function getDataTextKey(): string
+    {
+        return 'label';
     }
 
 }
