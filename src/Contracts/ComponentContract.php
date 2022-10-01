@@ -42,6 +42,10 @@ interface ComponentContract
 
     public function getCustomOptions(): array;
 
+    public function setParentForm(FormContract $formContract): self;
+
+    public function getParentForm(): FormContract;
+
     public function handle(mixed $data, ?ComponentContract $parent = null): mixed;
 
     public function applyChanges(mixed $data, mixed $parentData): mixed;

@@ -5,6 +5,7 @@ namespace YProjects\Forms\Components;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 use YProjects\Forms\Contracts\ComponentContract;
+use YProjects\Forms\Contracts\FormContract;
 
 abstract class BaseComponent implements ComponentContract
 {
@@ -24,6 +25,8 @@ abstract class BaseComponent implements ComponentContract
     protected bool $isHandled = false;
 
     protected array $customOptions = [];
+
+    protected ?FormContract $parentForm = null;
 
     public static function make(string $name): ComponentContract
     {
@@ -118,6 +121,17 @@ abstract class BaseComponent implements ComponentContract
     public function getCustomOptions(): array
     {
         return $this->customOptions;
+    }
+
+    public function setParentForm(FormContract $formContract): self
+    {
+        $this->parentForm = $formContract;
+        return $this;
+    }
+
+    public function getParentForm(): FormContract
+    {
+        return $this->parentForm;
     }
 
     public function applyChanges(mixed $data, mixed $parentData): mixed

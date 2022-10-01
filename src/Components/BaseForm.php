@@ -29,7 +29,10 @@ abstract class BaseForm extends BaseComponent implements FormContract
     {
         $this->fields = $this->getFields();
 
+        /** @var ComponentContract $field */
         foreach ($this->fields as $field) {
+            $field->setParentForm($this);
+
             if ($field instanceof BaseForm) {
                 $field->build();
             }
@@ -92,6 +95,11 @@ abstract class BaseForm extends BaseComponent implements FormContract
                 'classes' => 'col-4'
             ]
         ];
+    }
+
+    public function getCreatedFields(): array
+    {
+        return $this->fields;
     }
 
     public function asGroup(string $name): self
