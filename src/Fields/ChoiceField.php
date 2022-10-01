@@ -9,14 +9,17 @@ use YProjects\Forms\Contracts\WithDataSetContract;
 use YProjects\Forms\Traits\WithAjaxDataProvider;
 
 /**
- * @method static CheckboxGroup make(string $name)
+ * @method static ChoiceField make(string $name)
  */
-class CheckboxGroup extends BaseField implements WithDataSetContract
+class ChoiceField extends BaseField implements WithDataSetContract
 {
 
     use WithAjaxDataProvider;
 
     protected array $options = [];
+
+    protected bool $isMultiple = false;
+    protected bool $isExpanded = false;
 
     protected string $labelProperty = 'label';
     protected string $valueProperty = 'id';
@@ -26,7 +29,19 @@ class CheckboxGroup extends BaseField implements WithDataSetContract
 
     public function getType(): string
     {
-        return 'checkbox-group';
+        return 'choice';
+    }
+
+    public function multiple(): self
+    {
+        $this->isMultiple = true;
+        return $this;
+    }
+
+    public function expanded(): self
+    {
+        $this->isExpanded = true;
+        return $this;
     }
 
     public function handle(mixed $data, ?ComponentContract $parent = null): mixed
@@ -64,6 +79,9 @@ class CheckboxGroup extends BaseField implements WithDataSetContract
             $options['items'] = $this->getAvailableData();
         }
 
+        $options['multiple'] = $this->isMultiple;
+        $options['expanded'] = $this->isExpanded;
+
         $options = array_merge_recursive($options, $baseOptions);
         return $options;
     }
@@ -78,7 +96,7 @@ class CheckboxGroup extends BaseField implements WithDataSetContract
 
     /**
      * @param array $options
-     * @return CheckboxGroup
+     * @return ChoiceField
      */
     public function setOptions(array $options): self
     {
@@ -96,7 +114,7 @@ class CheckboxGroup extends BaseField implements WithDataSetContract
 
     /**
      * @param string $labelProperty
-     * @return CheckboxGroup
+     * @return ChoiceField
      */
     public function setLabelProperty(string $labelProperty): self
     {
@@ -114,7 +132,7 @@ class CheckboxGroup extends BaseField implements WithDataSetContract
 
     /**
      * @param string $valueProperty
-     * @return CheckboxGroup
+     * @return ChoiceField
      */
     public function setValueProperty(string $valueProperty): self
     {
@@ -132,7 +150,7 @@ class CheckboxGroup extends BaseField implements WithDataSetContract
 
     /**
      * @param mixed $optionsResolver
-     * @return CheckboxGroup
+     * @return ChoiceField
      */
     public function setOptionsResolver(mixed $optionsResolver): self
     {
