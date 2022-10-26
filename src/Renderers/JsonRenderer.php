@@ -6,6 +6,8 @@ use YProjects\Forms\Components\BaseField;
 use YProjects\Forms\Components\Collection;
 use YProjects\Forms\Components\BaseForm;
 use YProjects\Forms\Contracts\ComponentContract;
+use YProjects\Forms\Contracts\FieldContract;
+use YProjects\Forms\Contracts\FormContract;
 use YProjects\Forms\Contracts\Renderer;
 
 class JsonRenderer implements Renderer
@@ -19,7 +21,7 @@ class JsonRenderer implements Renderer
     {
         $formData = [];
         $formData['schema'] = $this->mapForm($component);
-        $formData['data'] = $component->getValue();
+        $formData['data'] = $this->mutateData($component, $component->getValue());
 
         return $formData;
     }
@@ -105,6 +107,37 @@ class JsonRenderer implements Renderer
         }
 
         return $customOptions;
+    }
+
+    protected function mutateData(FormContract $form, \ArrayAccess $data): array
+    {
+        $fields = $form->getCreatedFields();
+        $fields = collect($fields);
+
+        return $fields->mapWithKeys(fn (ComponentContract $fieldContract) => [ $fieldContract->getName() => $this->mutateValue($fieldContract) ])
+            ->toArray();
+    }
+
+    protected function mutateValue(ComponentContract $field): mixed
+    {
+        if ($field instanceof Collection) {
+            return $this->mutateCollectionData($field);
+        } else {
+            return $field->getValue();
+        }
+    }
+
+    protected function mutateCollectionData(Collection $field): array
+    {
+        $value = collect($field->getValue());
+        return $value->map(function ($item) use ($field) {
+            $collectionForm = $field->getFormObject();
+            $collectionForm->fill($item);
+
+            $collectionItem = $this->mutateData($collectionForm, $collectionForm->getValue());
+            $collectionItem['@key'] = $field->getItemId($item);
+            return $collectionItem;
+        })->toArray();
     }
 
 }

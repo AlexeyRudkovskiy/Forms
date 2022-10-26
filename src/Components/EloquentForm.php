@@ -3,6 +3,7 @@
 namespace YProjects\Forms\Components;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Str;
 use YProjects\Forms\Contracts\ComponentContract;
 use YProjects\Forms\Exceptions\RelationMethodDoesNotExist;
 
@@ -10,6 +11,7 @@ abstract class EloquentForm extends BaseForm
 {
 
     protected bool $isEloquentModel = true;
+    protected mixed $saveCallback = null;
 
     abstract public function getInitialValue(): mixed;
 
@@ -30,8 +32,13 @@ abstract class EloquentForm extends BaseForm
         }
 
         if ($parent === null) {
-            $value->save();
-            $this->setValue($value);
+            if ($this->saveCallback === null) {
+                $value->save();
+                $this->setValue($value);
+            } else {
+                $value = call_user_func($this->saveCallback, $value);
+                $this->setValue($value);
+            }
         } else {
             if ($parent instanceof Collection) {
                 $value = $parent->applyChangesFor($value);
@@ -56,20 +63,29 @@ abstract class EloquentForm extends BaseForm
     public function applyChanges(mixed $data, mixed $parentData): mixed
     {
         if ($this->isEloquentModel) {
-            if (method_exists($parentData, $this->relationName)) {
+            $methodName = $this->relationName;
+            $methodName = Str::camel($methodName);
+
+            if (method_exists($parentData, $methodName)) {
                 $relation = call_user_func_array([
-                    $parentData, $this->relationName
+                    $parentData, $methodName
                 ], [ ]);
 
                 $relation->save($data);
             } else if ($parentData instanceof Model) {
-                throw new RelationMethodDoesNotExist('Method ' . $this->relationName . ' does not exists in ' . get_class($parentData));
+                throw new RelationMethodDoesNotExist('Method ' . $methodName . ' does not exists in ' . get_class($parentData));
             }
 
             return $parentData;
         }
 
         return parent::applyChanges($data, $parentData);
+    }
+
+    public function setSaveCallback(mixed $callback): self
+    {
+        $this->saveCallback = $callback;
+        return $this;
     }
 
 }

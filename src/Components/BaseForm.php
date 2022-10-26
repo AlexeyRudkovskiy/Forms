@@ -2,10 +2,9 @@
 
 namespace YProjects\Forms\Components;
 
-use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Str;
 use YProjects\Forms\Contracts\ComponentContract;
 use YProjects\Forms\Contracts\FormContract;
-use YProjects\Forms\Exceptions\RelationMethodDoesNotExist;
 
 abstract class BaseForm extends BaseComponent implements FormContract
 {
@@ -64,7 +63,7 @@ abstract class BaseForm extends BaseComponent implements FormContract
         /** @var ComponentContract $field */
         foreach ($this->fields as $field) {
             $fieldName = $field->getName();
-            $fieldValue = $data[$fieldName] ?? null;
+            $fieldValue = $data[$fieldName] ?? $data[Str::camel($fieldName)] ?? null;
 
             if ($field instanceof BaseForm) {
                 $field->fill($fieldValue ?? []);
@@ -113,7 +112,7 @@ abstract class BaseForm extends BaseComponent implements FormContract
     protected function handleField(ComponentContract $field, mixed $value, mixed $update): mixed
     {
         $fieldName = $field->getName();
-        $fieldValue = $value[$fieldName] ?? null;
+        $fieldValue = $value[$fieldName] ?? $value[Str::camel($fieldName)] ?? null;
 
         if ($field instanceof BaseForm) {
             $fieldValue = $field->handle($update[$fieldName] ?? [], $this);

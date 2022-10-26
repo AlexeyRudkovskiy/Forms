@@ -3,6 +3,7 @@
 namespace YProjects\Forms\Components;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Str;
 use YProjects\Forms\Contracts\ComponentContract;
 use YProjects\Forms\Exceptions\RelationMethodDoesNotExist;
 use YProjects\Forms\Traits\WithComponentBuilder;
@@ -69,7 +70,9 @@ class Collection extends BaseField
 
         $createItems = $createItems->filter(fn ($item) => !array_key_exists('@key', $item));
 
-        if ($value instanceof \Illuminate\Support\Collection) {
+        $value = $value ?? collect([]);
+
+        if ($value instanceof \Illuminate\Support\Collection || $value instanceof \Illuminate\Database\Eloquent\Collection) {
             $updateItems = $value->filter(fn ($item) => in_array($this->getItemId($item), $updateIds));
             $removeItems = $value->filter(fn ($item) => !in_array($this->getItemId($item), $updateIds));
         } else {
@@ -103,13 +106,16 @@ class Collection extends BaseField
     {
         /** @var Model $parentData */
         $parentData = $this->parent->getValue();
-        if (method_exists($parentData, $this->getName())) {
-            $relationship = call_user_func_array([$parentData, $this->getName()], []);
+        $methodName = $this->getName();
+        $methodName = Str::camel($methodName);
+
+        if (method_exists($parentData, $methodName)) {
+            $relationship = call_user_func_array([$parentData, $methodName], []);
             $value = $relationship->save($data);
 
             return $value;
         } else {
-            throw new RelationMethodDoesNotExist('Method ' . $this->getName() . ' is not exists in ' . get_class($parentData));
+            throw new RelationMethodDoesNotExist('Method ' . $methodName . ' is not exists in ' . get_class($parentData));
         }
     }
 
@@ -133,7 +139,7 @@ class Collection extends BaseField
         return $form;
     }
 
-    protected function getItemId(mixed $object): string
+    public function getItemId(mixed $object): string
     {
         return sha1(get_class($object) . '@' . $object->{$this->childIdField});
     }
